@@ -1,0 +1,27 @@
+{
+    "author": "Pedro Narciso García Revington <p.revington@gmail.com> (pedro-narciso.com)",
+    "name": "xratesjs",
+    "description": "A interpreter for xrates documents",
+    "version": "0.0.1",
+    "homepage": "http://revington.github.com/xratesjs",
+    "repository": {
+        "url": ""
+    },
+    "main": "./lib/xratesjs.js",
+    "engines": {
+        "node": "~0.6.7"
+    },
+    "dependencies": {
+        "underscore": ">=1.1.7"
+    },
+    "devDependencies": {
+        "vows": ">=0.1.6"
+    },
+    "scripts": {
+        "test": "vows  --spec"
+    },
+    "directories": {
+        "lib": "./lib",
+        "doc": "./doc"
+    }
+}
