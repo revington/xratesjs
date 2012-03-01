@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+var program = require('commander'),
+xratesjs = require('../');
+
+program.name ='xratesjs';
+program.version = xratesjs.version;
+
+
