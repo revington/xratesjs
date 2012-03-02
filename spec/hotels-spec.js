@@ -3,234 +3,55 @@
  */
 var vows = require('vows'),
     assert = require('assert'),
-    xrates = require('../lib/xratesjs');
-var context = {};
+    xrates = require('../lib/xratesjs'),
+    easyHotel = require('../spec/hotel-rates').easyHotel,
+    context = {};
 context.normal = {
     date: new Date(2011, 1, 15),
     pax: [null, null, 5, 7],
     checkin: new Date(2011, 4, 29),
     checkout: new Date(2011, 5, 2)
 };
-var easyHotel= new xrates.Rates();
-easyHotel.pax = [{
-    paxType: 'AD',
-    fromAge: 12,
-    toAge: 2000,
-    isDefault: true
-}, {
-    paxType: 'BB',
-    fromAge: 0,
-    toAge: 1
-}, {
-    paxType: 'CH',
-    fromAge: 2,
-    toAge: 11
-}];
-easyHotel.rules['rates season 1'] = {
-    apply: {
-        unit: 'PerPerson',
-        frequency: 'PerNight'
-    },
-    incase: [{
-        fn: 'NightInRange',
-        args: [{
-            start: new Date(2011, 0, 1, 0, 0, 0),
-            end: new Date(2011, 2, 1, 23, 59, 59)
-        }]
-    }],
-    update: [{
-        register: 'price',
-        args: {
-            mode: 'x',
-            verb: 'a',
-            value: 2
-        }
-    }]
-};
-easyHotel.rules['rates season 2'] = {
-    apply: {
-        unit: 'PerPerson',
-        frequency: 'PerNight'
-    },
-    incase: [{
-        fn: 'NightInRange',
-        args: [{
-            start: new Date(2011, 2, 2, 0, 0, 0),
-            end: new Date(2011, 4, 31, 23, 59, 59)
-        }]
-    }],
-    update: [{
-        register: 'price',
-        args: {
-            verb: 'a',
-            mode: 'x',
-            value: 4
-        }
-    }]
-};
-easyHotel.rules['rates season 3'] = {
-    apply: {
-        unit: 'PerPerson',
-        frequency: 'PerNight'
-    },
-    incase: [{
-        fn: 'NightInRange',
-        args: [{
-            'start': new Date(2011, 5, 1, 0, 0, 0),
-            'end': new Date(2011, 11, 31, 23, 59, 59)
-        }]
-    }],
-    update: [{
-        register: 'price',
-        args: {
-            verb: 'a',
-            mode: 'x',
-            value: 8
-        }
-    }]
-};
-easyHotel.rules['early booking'] = {
-    apply: {
-        unit: 'Once',
-        frequency: 'Once'
-    },
-    incase: [{
-        fn: 'CompareDates',
-        args: {
-            from: 'today',
-            to: 'checkin',
-            op: '>=',
-            compareTo: 'P30D'
-        }
-    }],
-    update: [{
-        register: 'price',
-        args: {
-            verb: 'm',
-            value: 0.90,
-            mode: 'x'
-        }
-    }]
-};
-easyHotel.rules['first child discount'] = {
-    apply: {
-        unit: 'PerPerson',
-        frequency: 'PerNight'
-    },
-    incase: [{
-        fn: 'NightInRange',
-        args: [{
-            start: new Date(2011, 0, 1, 0, 0, 0),
-            end: new Date(2011, 11, 27, 0, 0, 0)
-        }]
-    }, {
-        fn: 'PaxInRange',
-        args: [{
-            type: 'NI',
-            rangeStart: 1,
-            rangeEnd: 1
-        }]
-    }],
-    update: [{
-        register: 'price',
-        args: {
-            verb: 'm',
-            value: 0,
-            mode: 'u'
-        }
-    }, {
-        register: 'discount',
-        args: {
-            verb: 'a',
-            value: 'primer niño gratis',
-            mode: 'x'
-        }
-    }]
-};
-easyHotel.rules['second child discount'] = {
-    apply: {
-        unit: 'PerPerson',
-        frequency: 'PerNight'
-    },
-    incase: [{
-        fn: 'NightInRange',
-        args: [{
-            start: new Date(2011, 0, 1, 0, 0, 0),
-            end: new Date(2011, 11, 27, 0, 0, 0)
-        }]
-    }, {
-        fn: 'PaxInRange',
-        args: [{
-            type: 'NI',
-            rangeStart: 2,
-            rangeEnd: 2
-        }]
-    }],
-    update: [{
-        register: 'price',
-        args: {
-            verb: 'm',
-            value: 0.50,
-            mode: 'u'
-        }
-    }, {
-        register: 'discount',
-        args: {
-            verb: 'a',
-            value: 'segundo niño gratis',
-            mode: 'x'
-        }
-    }]
-};
-easyHotel.rules.vat = {
-    apply: {
-        unit: 'Once',
-        frequency: 'Once'
-    },
-    incase: [{
-        fn: 'Always'
-    }],
-    update: [{
-        register: 'price',
-        args: {
-            mode: 'x',
-            verb: 'm',
-            value: 1.18
-        }
-    }]
-};
-easyHotel.products = [{
-    name: 'single',
-    rates: {
-        ref: 'rates season 1',
-        children: [{
-            ref: 'rates season 2',
-            children: [{
-                ref: 'rates season 3',
-                children: [{
-                    ref: 'early booking',
-                    children: [{
-                        ref: 'first child discount',
-                        children: [{
-                            ref: 'second child discount',
-                            children: [{
-                                ref: 'vat'
-                            }]
-                        }]
-                    }]
-                }]
-            }]
-        }]
-    }
-}];
 vows.describe('xrates').addBatch({
-    'Dadas las siguientes tarifas para la single: \n\tDEFINICIÓN PAX\n\t\t- pax ad (por defecto) 12 ~ ∞\n\t\t- bb 0 ~ 1\n\t\t- ch 2,11 \n\tHAB SINGLE (PPPPN)\n\t\t- 2 unidades monetarias desde 1/1/11 hasta 01/03/11 \n\t\t- 4 unidades monetarias 02/03/11 ~ 31/05/11 \n\t\t- 8 unidades monetarias 01/06/11 ~ 31/12/11\n\tDESCUENTOS:\n\t\t- early booking 10% con 30 días\n\t\t- 1er niño 100% descuento\n\t\t- 2 niño 50% descuento\n\tRecargos:\n\t\t- 18% iva\n~~~~~~~~~~~\n pasándole una reserva el día 15/02 para el 15/06 de 4n con pax ?,?,5,7 tendré una oferta:': {
+    'With the following rates for the single room: \n\tPax policy\n\t\t- pax ad (this is the default pax) 12 ~ ∞\n\t\t- bb 0 ~ 1\n\t\t- ch 2,11 \n\tSeasons:\n\t\t- from 1/1/11 till 01/03/11 price is 2 units PPPN\n\t\t- from 02/03/11 till 31/05/11 price is 4 units PPPN\n\t\t- from 01/06/11 till 31/12/11 price is 8 units PPPN\n\tDiscounts:\n\t\t- early booking 10% if 30 days in advance\n\t\t- first children 100%\n\t\t- secon children 50%\n\tSurcharge:\n\t\t- 18% vat for all bookings\n~~~~~~~~~~~\n A reservation made on 15/2/11 from 29/05/11 till 2/06/11 for pax ?,?,5,7:': {
         topic: function () {
             var ret = xrates.Processor.process(easyHotel, context.normal);
             return ret;
         },
-        'Debe haber una single': function (topic) {
-            assert.isNotNull(topic);
+        'Must have one product': function (topic) {
+            assert.strictEqual(topic.products.length, 1);
+        },
+        'First three nights "season 2" rate will be applied to all pax': function (topic) {
+            var x = topic.products[0].applied[0].units;
+            var i, length = 3 * 4,
+                // 3 nights by 4 pax
+                curr;
+            for (i = 0; i < length; i++) {
+                curr = x[i];
+                assert.strictEqual(curr.rules[0].id, 'rates season 2');
+            }
+        },
+        'Last night "season 3" rate will be applied to all pax': function (topic) {
+            var x = topic.products[0].applied[0].units;
+            var i, length, curr;
+            for (i = 3 * 4, length = x.length; i < length; i++) {
+                curr = x[i];
+                assert.strictEqual(curr.rules[0].id, 'rates season 3');
+            }
+        },
+        'An early booking discount must be applied for each night': function (topic) {
+            var x = topic.products[0].applied[0].units,
+                i, // 4 nights by 4 
+                paxlength = 4 * 4,
+                curr,
+		length;
+            for (i = 0,length = x.lengt; i < length; i++) {
+                curr = x[i];
+                assert.strictEqual(curr.rules[1].id, 'early booking');
+            }
+        },
+        'Vat must be applied': function (topic) {
+            assert.strictEqual(topic.products[0].applied[1].units[0].rules[0].id, 'vat');
         }
     }
 }).export(module);
