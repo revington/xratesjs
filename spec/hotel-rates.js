@@ -114,7 +114,7 @@ easyHotel.rules['first child discount'] = {
     }, {
         fn: 'PaxInRange',
         args: [{
-            type: 'NI',
+            type: 'CH',
             rangeStart: 1,
             rangeEnd: 1
         }]
@@ -124,7 +124,7 @@ easyHotel.rules['first child discount'] = {
         args: {
             verb: 'm',
             value: 0,
-            mode: 'u'
+            mode: 'x'
         }
     }, {
         register: 'discount',
@@ -149,7 +149,7 @@ easyHotel.rules['second child discount'] = {
     }, {
         fn: 'PaxInRange',
         args: [{
-            type: 'NI',
+            type: 'CH',
             rangeStart: 2,
             rangeEnd: 2
         }]
@@ -159,7 +159,7 @@ easyHotel.rules['second child discount'] = {
         args: {
             verb: 'm',
             value: 0.50,
-            mode: 'u'
+            mode: 'x'
         }
     }, {
         register: 'discount',
