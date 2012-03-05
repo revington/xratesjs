@@ -5,6 +5,7 @@ var vows = require('vows'),
     assert = require('assert'),
     xrates = require('../lib/xratesjs'),
     easyHotel = require('../spec/hotel-rates').easyHotel,
+    _ = require('underscore'),
     context = {};
 context.normal = {
     date: new Date(2011, 1, 15),
@@ -39,19 +40,50 @@ vows.describe('xrates').addBatch({
                 assert.strictEqual(curr.rules[0].id, 'rates season 3');
             }
         },
+        'first children has a 100% discount each night': function (topic) {
+            var firstChildNights = _.map(_.filter(topic.products[0].applied, function (applied) {
+                return applied.frequencyType === 'PerNight' && applied.unitType === 'PerPerson';
+            }), function (applied) {
+                return _.filter(applied.units, function (unit) {
+                    return unit.unit.paxType === 'CH' && unit.unit.typeCount === 1;
+                });
+            });
+            var discountsLeft = 4;
+            var discounts = _.filter(_.flatten(_.pluck(_.flatten(firstChildNights), 'rules')), function (x) {
+                return x.id === 'first child discount';
+            });
+            assert.strictEqual(discounts.length, discountsLeft);
+        },
+        'second children has a 50% discount each night': function (topic) {
+            var secondChildNights = _.map(_.filter(topic.products[0].applied, function (applied) {
+                return applied.frequencyType === 'PerNight' && applied.unitType === 'PerPerson';
+            }), function (applied) {
+                return _.filter(applied.units, function (unit) {
+                    return unit.unit.paxType === 'CH' && unit.unit.typeCount === 2;
+                });
+            });
+            var discountsLeft = 4;
+            var discounts = _.filter(_.flatten(_.pluck(_.flatten(secondChildNights), 'rules')), function (x) {
+                return x.id === 'second child discount';
+            });
+            assert.strictEqual(discounts.length, discountsLeft);
+        },
         'An early booking discount must be applied for each night': function (topic) {
             var x = topic.products[0].applied[0].units,
                 i, // 4 nights by 4 
                 paxlength = 4 * 4,
-                curr,
-		length;
-            for (i = 0,length = x.lengt; i < length; i++) {
+                curr, length;
+            for (i = 0, length = x.lengt; i < length; i++) {
                 curr = x[i];
                 assert.strictEqual(curr.rules[1].id, 'early booking');
             }
         },
         'Vat must be applied': function (topic) {
             assert.strictEqual(topic.products[0].applied[1].units[0].rules[0].id, 'vat');
+        },
+        'Final price must be 41,3 units': function (topic) {
+            var r = xrates.reckon.run(topic);
+            assert.strictEqual(r.products.single.price, 41.3);
         }
     }
 }).export(module);
