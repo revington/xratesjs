@@ -40,7 +40,7 @@ vows.describe('xrates').addBatch({
                 assert.strictEqual(curr.rules[0].id, 'rates season 3');
             }
         },
-        'first children has a 100% discount each night': function (topic) {
+        'First children has a 100% discount each night': function (topic) {
             var firstChildNights = _.map(_.filter(topic.products[0].applied, function (applied) {
                 return applied.frequencyType === 'PerNight' && applied.unitType === 'PerPerson';
             }), function (applied) {
@@ -54,7 +54,7 @@ vows.describe('xrates').addBatch({
             });
             assert.strictEqual(discounts.length, discountsLeft);
         },
-        'second children has a 50% discount each night': function (topic) {
+        'Second children has a 50% discount each night': function (topic) {
             var secondChildNights = _.map(_.filter(topic.products[0].applied, function (applied) {
                 return applied.frequencyType === 'PerNight' && applied.unitType === 'PerPerson';
             }), function (applied) {
@@ -81,9 +81,9 @@ vows.describe('xrates').addBatch({
         'Vat must be applied': function (topic) {
             assert.strictEqual(topic.products[0].applied[1].units[0].rules[0].id, 'vat');
         },
-        'Final price must be 41,3 units': function (topic) {
-            var r = xrates.reckon.run(topic);
-            assert.strictEqual(r.products.single.price, 41.3);
+        'Final price must be 53.1  units': function (topic) {
+		var rr = xrates.reckon.run(topic.products[0]);
+            assert.strictEqual(rr.registers.price.toFixed(2), 53.10);
         }
     }
 }).export(module);
