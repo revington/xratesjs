@@ -1,4 +1,201 @@
 var xrates = require('../lib/xratesjs');
+var losPersas = new xrates.Rates();
+losPersas.pax = [{
+    paxType: 'AD',
+    fromAge: 12,
+    toAge: 2000,
+    isDefault: true
+}, {
+    paxType: 'BB',
+    fromAge: 0,
+    toAge: 1
+}, {
+    paxType: 'CH',
+    fromAge: 2,
+    toAge: 11
+}];
+losPersas.rules['At least one adult per room'] = {
+    apply: {
+        unit: 'Once',
+        frequency: 'Once'
+    },
+    incase: [{
+        fn: 'CountPax',
+        args: [{
+            type: 'AD',
+            op: '==',
+            value: 0
+        }]
+    }],
+    update: [{
+        register: 'availability',
+        args: {
+            mode: 'c',
+            verb: 'a',
+            value: 'At least one adult per room'
+        }
+    }]
+};
+losPersas.rules['Up to 3 adults per room'] = {
+    apply: {
+        unit: 'Once',
+        frequency: 'Once'
+    },
+    incase: [{
+        fn: 'CountPax',
+        args: [{
+            type: 'AD',
+            op: '>',
+            value: 3
+        }]
+    }],
+    update: [{
+        register: 'availability',
+        args: {
+            mode: 'c',
+            verb: 'a',
+            value: 'Up to 3 adults per room'
+        }
+    }]
+};
+losPersas.rules['children overload'] = {
+    apply: {
+        unit: 'Once',
+        frequency: 'Once'
+    },
+    incase: [{
+        fn: 'CountPax',
+        args: [{
+            op: '>',
+            value: 4
+        }, {
+            op: '>',
+            value: 2,
+            type: 'CH'
+        }]
+    }],
+    update: [{
+        register: 'availability',
+        args: {
+            mode: 'c',
+            verb: 'a',
+            value: 'Children overload: A maximum of 4 pax are allowed'
+        }
+    }]
+};
+losPersas.rules['adult overload'] = {
+    apply: {
+        unit: 'Once',
+        frequency: 'Once'
+    },
+    incase: [{
+        fn: 'CountPax',
+        args: [{
+            op: '>',
+            value: 4
+        }, {
+            op: '>',
+            value: 2,
+            type: 'AD'
+        }]
+    }],
+    update: [{
+        register: 'availability',
+        args: {
+            mode: 'c',
+            verb: 'a',
+            value: 'A maximum of 4 pax are allowed'
+        }
+    }]
+};
+losPersas.rules['aaa'] = {
+    apply: {
+        unit: 'Once',
+        frequency: 'Once'
+    },
+    incase: [{
+        fn: 'CountPax',
+        args: [{
+            op: '>',
+            value: 4
+        }, {
+            op: '>',
+            value: 2,
+            type: 'AD'
+        }, {
+            op: '>',
+            value: 2,
+            type: 'BB'
+        }, {
+            op: '>',
+            value: 1,
+            type: 'CH'
+        }]
+    }],
+    update: [{
+        register: 'availability',
+        args: {
+            mode: 'c',
+            verb: 'a',
+            value: 'More than 4 pax are only allowed for a 2 adults,1 child and 2 baby'
+        }
+    }]
+};
+losPersas.rules['More than 4 pax are only allowed for a 2 adults,1 child and 2 baby'] = {
+    apply: {
+        unit: 'Once',
+        frequency: 'Once'
+    },
+    incase: [{
+        fn: 'CountPax',
+        args: [{
+            op: '>',
+            value: 4
+        }, {
+            op: '>',
+            value: 2,
+            type: 'AD'
+        }, {
+            op: '>',
+            value: 3,
+            type: 'BB'
+        }, {
+            op: '>',
+            value: 0,
+            type: 'CH'
+        }]
+    }],
+    update: [{
+        register: 'availability',
+        args: {
+            mode: 'c',
+            verb: 'a',
+            value: 'More than 4 pax are only allowed for a 2 adults,1 child and 2 baby'
+        }
+    }]
+};
+losPersas.products = [{
+    name: 'single',
+    rates: {
+        ref: 'At least one adult per room',
+        children: [{
+            ref: 'Up to 3 adults per room',
+            children: [{
+                ref: 'adult overload',
+                children: [{
+                    ref: 'children overload',
+                    children: [{
+                        ref: 'More than 4 pax are only allowed for a 2 adults,1 child and 2 baby',
+                        children: [{
+                            ref: 'aaa'
+                        }]
+                    }]
+                }]
+            }]
+        }]
+    }
+}];
+module.exports.losPersas = losPersas;
 var easyHotel = new xrates.Rates();
 easyHotel.pax = [{
     paxType: 'AD',
@@ -83,13 +280,11 @@ easyHotel.rules['early booking'] = {
         frequency: 'PerNight'
     },
     incase: [{
-        fn: 'CompareDates',
-        args: {
-            from: 'today',
-            to: 'checkin',
+        fn: 'Antelation',
+        args: [{
             op: '>=',
-            compareTo: 'P30D'
-        }
+            duration: 'P30D'
+        }]
     }],
     update: [{
         register: 'price',
@@ -206,7 +401,7 @@ easyHotel.products = [{
                             }]
                         }]
                     }]
-                }]
+               }]
             }]
         }]
     }
