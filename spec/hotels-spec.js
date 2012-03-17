@@ -37,13 +37,16 @@ suite.addBatch({
     'With the following rates for the single room: \n\tPax policy\n\t\t- pax ad (this is the default pax) 12 ~ ∞\n\t\t- bb 0 ~ 1\n\t\t- ch 2,11 \n\tSeasons:\n\t\t- from 1/1/11 till 01/03/11 price is 2 units PPPN\n\t\t- from 02/03/11 till 31/05/11 price is 4 units PPPN\n\t\t- from 01/06/11 till 31/12/11 price is 8 units PPPN\n\tDiscounts:\n\t\t- early booking 10% if 30 days in advance\n\t\t- first children 100%\n\t\t- secon children 50%\n\tSurcharge:\n\t\t- 18% vat for all bookings\n~~~~~~~~~~~\n A reservation made on 15/2/11 from 29/05/11 till 2/06/11 for pax ?,?,5,7:': {
         topic: function () {
             var ret = xrates.Processor.process(hotelRates.easyHotel, context.normal);
+            _.each(ret.products, function (p) {
+                p.reckon();
+            });
             return ret;
+
         },
         'Must have one product': function (topic) {
             assert.strictEqual(topic.products.length, 1);
         },
         'First three nights "season 2" rate will be applied to all pax': function (topic) {
-		
             var x = topic.products[0].applied[0].units;
             var i, length = 3 * 4,
                 // 3 nights by 4 pax
@@ -103,91 +106,98 @@ suite.addBatch({
             assert.strictEqual(topic.products[0].applied[1].units[0].rules[0].id, 'vat');
         },
         'Final price must be 53.1  units': function (topic) {
-            topic.products[0].reckon();
-            // xrates.reckon.run(topic.products[0]);
             assert.strictEqual(topic.products[0].registers.price.toFixed(2), (53.10).toFixed(2));
+        },
+        'First child benefits from a discount of 20': function (topic) {
+            assert.strictEqual(topic.products[0].registers['discount First child discount'], 20);
+        },
+        'Second child benefits from a discount of 10': function (topic) {
+            assert.strictEqual(topic.products[0].registers['discount Second child half price'], 10);
+        },'Early booking discount is 5': function (topic) {
+            assert.strictEqual(topic.products[0].registers['discount Early booking discount'], 5);
+        }
+
+    }
+});
+suite.addBatch({
+    'Check availability restriction in Los Persas. Note that Los Persas does not has normal availability, just restrictions': {
+        topic: hotelRates.persas,
+        'At least one adult per room': function (topic) {
+            var r = xrates.Processor.process(hotelRates.losPersas, {
+                date: new Date(2011, 1, 15),
+                pax: [5, 6],
+                checkin: new Date(2011, 4, 29),
+                checkout: new Date(2011, 5, 2)
+            });
+            _.each(r.products, function (p) {
+                p.reckon();
+                assert.strictEqual(p.registers.availability, 'At least one adult per room');
+            });
+        },
+        'Up to three adults with a maximun of 4 pax in room': function (topic) {
+            var r = xrates.Processor.process(hotelRates.losPersas, {
+                date: new Date(2011, 1, 15),
+                pax: [null, null, null, null],
+                checkin: new Date(2011, 4, 29),
+                checkout: new Date(2011, 5, 2)
+            });
+            _.each(r.products, function (p) {
+                p.reckon();
+                assert.strictEqual(p.registers.availability, 'Up to 3 adults per room');
+            });
+            r = xrates.Processor.process(hotelRates.losPersas, {
+                date: new Date(2011, 1, 15),
+                pax: [null, null, 5, null],
+                checkin: new Date(2011, 4, 29),
+                checkout: new Date(2011, 5, 2)
+            });
+            _.each(r.products, function (p) {
+                p.reckon();
+                assert.notStrictEqual(p.registers.availability, 'false');
+            });
+        },
+        'Five pax are allowed only when they are 2 adults 2 baby and 1 children or two adults with three babies': function (topic) {
+            var r = xrates.Processor.process(hotelRates.losPersas, {
+                date: new Date(2011, 1, 15),
+                pax: [null, null, 7, 0, 0],
+                checkin: new Date(2011, 4, 29),
+                checkout: new Date(2011, 5, 2)
+            });
+            _.each(r.products, function (p) {
+                p.reckon();
+                assert.strictEqual(_.isUndefined(p.registers.availability), true);
+            });
+            r = xrates.Processor.process(hotelRates.losPersas, {
+                date: new Date(2011, 1, 15),
+                pax: [null, null, null, 0, 0],
+                checkin: new Date(2011, 4, 29),
+                checkout: new Date(2011, 5, 2)
+            });
+            _.each(r.products, function (p) {
+                p.reckon();
+                assert.strictEqual(p.registers.availability, 'A maximum of 4 pax are allowed');
+            });
+            r = xrates.Processor.process(hotelRates.losPersas, {
+                date: new Date(2011, 1, 15),
+                pax: [null, null, 7, 5, 3],
+                checkin: new Date(2011, 4, 29),
+                checkout: new Date(2011, 5, 2)
+            });
+            _.each(r.products, function (p) {
+                p.reckon();
+                assert.strictEqual(p.registers.availability, 'Children overload: A maximum of 4 pax are allowed');
+            });
+            r = xrates.Processor.process(hotelRates.losPersas, {
+                date: new Date(2011, 1, 15),
+                pax: [null, null, 0, 0, 0],
+                checkin: new Date(2011, 4, 29),
+                checkout: new Date(2011, 5, 2)
+            });
+            _.each(r.products, function (p) {
+                p.reckon();
+                assert.strictEqual(_.isUndefined(p.registers.availability), true);
+            });
         }
     }
 });
- suite.addBatch({
-     'Check availability restriction in Los Persas. Note that Los Persas does not has normal availability, just restrictions': {
-         topic: hotelRates.persas,
-         'At least one adult per room': function (topic) {
-             var r = xrates.Processor.process(hotelRates.losPersas, {
-                 date: new Date(2011, 1, 15),
-                 pax: [5, 6],
-                 checkin: new Date(2011, 4, 29),
-                 checkout: new Date(2011, 5, 2)
-             });
-             _.each(r.products, function (p) {
-                 p.reckon();
-                 assert.strictEqual(p.registers.availability, 'At least one adult per room');
-             });
-         },
-         'Up to three adults with a maximun of 4 pax in room': function (topic) {
-             var r = xrates.Processor.process(hotelRates.losPersas, {
-                 date: new Date(2011, 1, 15),
-                 pax: [null, null, null, null],
-                 checkin: new Date(2011, 4, 29),
-                 checkout: new Date(2011, 5, 2)
-             });
-             _.each(r.products, function (p) {
-                 p.reckon();
-                 assert.strictEqual(p.registers.availability, 'Up to 3 adults per room');
-             });
-             r = xrates.Processor.process(hotelRates.losPersas, {
-                 date: new Date(2011, 1, 15),
-                 pax: [null, null, 5, null],
-                 checkin: new Date(2011, 4, 29),
-                 checkout: new Date(2011, 5, 2)
-             });
-             _.each(r.products, function (p) {
-                 p.reckon();
-                 assert.notStrictEqual(p.registers.availability, 'false');
-             });
-         },
-         'Five pax are allowed only when they are 2 adults 2 baby and 1 children or two adults with three babies': function (topic) {
-             var r = xrates.Processor.process(hotelRates.losPersas, {
-                 date: new Date(2011, 1, 15),
-                 pax: [null, null, 7, 0, 0],
-                 checkin: new Date(2011, 4, 29),
-                 checkout: new Date(2011, 5, 2)
-             });
-             _.each(r.products, function (p) {
-                 p.reckon();
-                 assert.strictEqual(_.isUndefined(p.registers.availability),true); 
-             });
-             r = xrates.Processor.process(hotelRates.losPersas, {
-                 date: new Date(2011, 1, 15),
-                 pax: [null, null, null, 0, 0],
-                 checkin: new Date(2011, 4, 29),
-                 checkout: new Date(2011, 5, 2)
-             });
-             _.each(r.products, function (p) {
-                 p.reckon();
-                 assert.strictEqual(p.registers.availability,'A maximum of 4 pax are allowed'); 
-             });
-             r = xrates.Processor.process(hotelRates.losPersas, {
-                 date: new Date(2011, 1, 15),
-                 pax: [null, null, 7, 5, 3],
-                 checkin: new Date(2011, 4, 29),
-                 checkout: new Date(2011, 5, 2)
-             });
-             _.each(r.products, function (p) {
-                 p.reckon();
-                 assert.strictEqual(p.registers.availability,'Children overload: A maximum of 4 pax are allowed'); 
-             });
-             r = xrates.Processor.process(hotelRates.losPersas, {
-                 date: new Date(2011, 1, 15),
-                 pax: [null, null, 0, 0, 0],
-                 checkin: new Date(2011, 4, 29),
-                 checkout: new Date(2011, 5, 2)
-             });
-             _.each(r.products, function (p) {
-                 p.reckon();
-                 assert.strictEqual(_.isUndefined(p.registers.availability),true); 
-             });
-         }
-     }
- });
 suite.export(module);

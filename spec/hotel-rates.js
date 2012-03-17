@@ -287,11 +287,25 @@ easyHotel.rules['early booking'] = {
         }]
     }],
     update: [{
+        register: 'discount Early booking discount',
+        args: {
+            verb: 'a',
+            mode: 'c',
+            value: 'price'
+        }
+    }, {
         register: 'price',
         args: {
             verb: 'm',
             value: 0.90,
             mode: 'x'
+        }
+    }, {
+        register: 'discount Early booking discount',
+        args: {
+            verb: 'm',
+            mode: 'x',
+            value: 0.10
         }
     }]
 };
@@ -315,18 +329,18 @@ easyHotel.rules['first child discount'] = {
         }]
     }],
     update: [{
+        register: 'discount First child discount',
+        args: {
+            verb: 'a',
+            value: 'price',
+            mode: 'c'
+        }
+    }, {
         register: 'price',
         args: {
             verb: 'm',
             value: 0,
-            mode: 'x'
-        }
-    }, {
-        register: 'discount',
-        args: {
-            verb: 'a',
-            value: 'primer niño gratis',
-            mode: 'x'
+            mode: 'c'
         }
     }]
 };
@@ -357,10 +371,10 @@ easyHotel.rules['second child discount'] = {
             mode: 'x'
         }
     }, {
-        register: 'discount',
+        register: 'discount Second child half price',
         args: {
             verb: 'a',
-            value: 'segundo niño gratis',
+            value: 'price',
             mode: 'x'
         }
     }]
@@ -391,17 +405,17 @@ easyHotel.products = [{
             children: [{
                 ref: 'rates season 3',
                 children: [{
-                    ref: 'early booking',
+                    ref: 'second child discount',
                     children: [{
                         ref: 'first child discount',
                         children: [{
-                            ref: 'second child discount',
+                            ref: 'early booking',
                             children: [{
                                 ref: 'vat'
                             }]
                         }]
                     }]
-               }]
+                }]
             }]
         }]
     }
