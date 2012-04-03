@@ -1,6 +1,8 @@
-                _             _     
-__  ___ __ __ _| |_ ___  ___ (_)___ 
-\ \/ / '__/ _` | __/ _ \/ __|| / __|
- >  <| | | (_| | ||  __/\__ \| \__ \
-/_/\_\_|  \__,_|\__\___||___// |___/
-                           |__/     
+xratesjs
+========
+
+**This project is in a very early stage**
+
+> A rate parser for the hospitality industry and others
+
+See *./spec* for more information about usage
